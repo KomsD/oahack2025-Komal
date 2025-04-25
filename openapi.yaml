@@ -1,0 +1,538 @@
+openapi: 3.0.0
+info:
+  title: Glyph
+  version: 0.0.1
+  contact:
+    name: OneAdvanced
+    url: https://oneadvanced.com/contact-us
+    email: api@oneadvanced.com
+  license:
+    name: Commercial License - OneAdvanced
+    url: "https://oneadvanced.com"
+  termsOfService: "https://www.oneadvanced.com/advanced-terms-and-conditions/"
+  x-audience: company-internal
+  x-api-id: 3bd860e6-ee3a-4c58-9193-bc93b8b4f9c3
+  description: >
+    The OneAdvanced AI <b>F</b>ile <b>P</b>rocessing <b>A</b>gent (FPA), Glyph, is a <i>complete</i> multi-modal AI powered solution for processing any file.<br><br>
+    
+    With features including:
+
+    <ul>
+    <li><b>File Upload</b><br>All files uploaded are AV scanned, the response assuming clean will be a fileId upon which action is taken.<br><br></li>
+    <li><b>OCR Data Extraction</b><br>The textual of your file is extracted and returned with 3 options, either as json, xml or markdown.<br><br></li>
+    <li><b>Automatic or Consumer driven Redaction</b><br>Automatic mode will use AI to dynamically identify PII and redact all values found.<br>Value mode will accommodate key values as specified by the consumer, such as name, address, email and so on.<br>Manual mode will allow terms specified by the consumer to be redacted.<br><br>All values use a traditional black box overlaying the values.<br><br></li>
+    <li><b>File Conversion</b><br>Convert any filetype to any other filetype, such as DOCX to PDF, XLS to PPT and so on.<br><br></li>
+    <li><b>Barcode Recognition</b><br>Billions of barcode's are read every single day across the world, QR codes particularly are prevalent now as they hold a lot of information, such as URLs.<br><br></li>
+    <li><b>Re-orientation</b><br>Assume a document is landscape and you want to make it portrait, or vice versa.<br><br></li>
+    <li><b>Splitting</b><br>Assume your document is 30 pages, and you want to split it in to 3 documents of 10 pages each.<br><br></li> 
+    <li><b>Merging</b><br>Assume you have multiple documents you want to merge into one.<br><br></li>
+    </ul>
+
+    <hr>
+
+servers:
+  - url: https://supabase.ftw/api
+    description: Use this URL to start using it. Simple really.
+tags:
+  - name: FPA
+    description: For simplicity, this API has a single operational tag.
+security:
+  - supabaseAuth: []
+paths:
+  /upload:
+    post:
+      tags:
+        - FPA
+      operationId: uploadFile
+      summary: Upload a file for processing
+      description: >
+        Upload a file and receive a file identifier (GUID) that can be used for further processing.<br><br><b>All</b> files are AV scanned, no exceptions.<br><br>Once a file is uploaded to Glyph and shows as 'clean', the AI can be used to perform processes on it using the returned File ID.
+      requestBody:
+        description: The file to be processed is provided as binary data.
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  minLength: 1
+                  maxLength: 9999
+              required:
+                - file
+      responses:
+        '200':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileResponse'
+        '400':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem400Response"
+        '401':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem401Response"
+        '403':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem403Response"
+        '415':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem415Response"
+  /scan:
+    post:
+      tags:
+        - FPA
+      operationId: scanFile
+      summary: Perform antivirus scan on a file
+      description: >
+        Initiate an AV scan using a specified scanning module (e.g., ClamAV) to detect threats.
+      requestBody:
+        description: The request requires the GUID of a previously uploaded file.
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                fileId:
+                  type: string
+                  format: uuid
+                  description: Identifier (GUID) of the previously uploaded file.
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+              required:
+                - fileId
+      responses:
+        '200':
+          description: Scan completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanResponse'
+        '400':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem400Response"
+        '401':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem401Response"
+        '403':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem403Response"
+        '415':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem415Response"
+  /ocr:
+    post:
+      tags:
+        - FPA
+      operationId: extractOcrText
+      summary: Extract text using OCR
+      description: >
+        Extract textual data from the file using Mistral OCR.
+      requestBody:
+        description: Provide the GUID of the file to perform OCR on.
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                fileId:
+                  type: string
+                  format: uuid
+                  description: Identifier (GUID) of the uploaded file.
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+              required:
+                - fileId
+      responses:
+        '200':
+          description: OCR extraction completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OcrResponse'
+        '400':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem400Response"
+        '401':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem401Response"
+        '403':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem403Response"
+        '415':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem415Response"
+  /redact:
+    post:
+      tags:
+        - FPA
+      operationId: redactFile
+      summary: Redact sensitive data in a file
+      description: >
+        Automatically or manually redact sensitive data from the file.
+      requestBody:
+        description: Provide the file GUID and specify the redaction mode ("auto" for automatic or "manual" for consumer directed).
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                fileId:
+                  type: string
+                  format: uuid
+                  description: Identifier (GUID) of the uploaded file.
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                mode:
+                  type: string
+                  enum: [auto, manual]
+                  description: Redaction mode "auto" (automatic) or "manual" (consumer directed).
+              required:
+                - fileId
+                - mode
+      responses:
+        '200':
+          description: Redaction completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedactionResponse'
+        '400':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem400Response"
+        '401':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem401Response"
+        '403':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem403Response"
+        '415':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem415Response"
+  /convert:
+    post:
+      tags:
+        - FPA
+      operationId: convertFile
+      summary: Convert file to a different format
+      description: >
+        Convert the file from its current format to another specified format (e.g., pdf, txt, jpg).
+      requestBody:
+        description: Provide the file GUID and the desired target format.
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                fileId:
+                  type: string
+                  format: uuid
+                  description: Identifier (GUID) of the uploaded file.
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                targetFormat:
+                  type: string
+                  description: Desired output file format (e.g., pdf, txt, jpg).
+                  minLength: 2
+                  maxLength: 10
+              required:
+                - fileId
+                - targetFormat
+      responses:
+        '200':
+          description: File conversion completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversionResponse'
+        '400':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem400Response"
+        '401':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem401Response"
+        '403':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem403Response"
+        '415':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem415Response"
+  /barcode:
+    post:
+      tags:
+        - FPA
+      operationId: recognizeBarcode
+      summary: Recognize barcode in a file
+      description: >
+        Detect and extract barcode information from the file.
+      requestBody:
+        description: Provide the file GUID for barcode detection.
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                fileId:
+                  type: string
+                  format: uuid
+                  description: Identifier (GUID) of the uploaded file.
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+              required:
+                - fileId
+      responses:
+        '200':
+          description: Barcode recognition completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BarcodeResponse'
+        '400':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem400Response"
+        '401':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem401Response"
+        '403':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem403Response"
+        '415':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem415Response"
+  /reorient:
+    post:
+      tags:
+        - FPA
+      operationId: reorientFile
+      summary: Reorient an image file
+      description: >
+        Automatically adjust the orientation of an image file.
+      requestBody:
+        description: Provide the file GUID for reorientation.
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                fileId:
+                  type: string
+                  format: uuid
+                  description: Identifier (GUID) of the uploaded file.
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+              required:
+                - fileId
+      responses:
+        '200':
+          description: Image reorientation completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReorientationResponse'
+        '400':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem400Response"
+        '401':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem401Response"
+        '403':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem403Response"
+        '415':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem415Response"
+  /split:
+    post:
+      tags:
+        - FPA
+      operationId: splitFile
+      summary: Split a multi-page document
+      description: >
+        Split a multi-page document (e.g., PDF) into separate files.
+      requestBody:
+        description: Provide the file GUID and an optional array of page numbers to extract.
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                fileId:
+                  type: string
+                  format: uuid
+                  description: Identifier (GUID) of the uploaded file.
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                pages:
+                  type: array
+                  description: Array of page numbers to extract. If omitted, all pages will be split.
+                  items:
+                    type: integer
+                    minimum: 1
+                    maximum: 1000
+                  minItems: 1
+                  maxItems: 100
+              required:
+                - fileId
+      responses:
+        '200':
+          description: File splitting completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SplitResponse'
+        '400':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem400Response"
+        '401':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem401Response"
+        '403':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem403Response"
+        '415':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem415Response"
+  /merge:
+    post:
+      tags:
+        - FPA
+      operationId: mergeFiles
+      summary: Merge multiple files
+      description: >
+        Merge multiple files into a single document.
+      requestBody:
+        description: Provide a non-empty array of file GUIDs to merge.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fileIds:
+                  type: array
+                  description: A non-empty array of file identifiers (GUIDs) to merge.
+                  items:
+                    type: string
+                    format: uuid
+                    example: "123e4567-e89b-12d3-a456-426614174000"
+                  minItems: 1
+                  maxItems: 10
+              required:
+                - fileIds
+      responses:
+        '200':
+          description: Files merged successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MergeResponse'
+        '400':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem400Response"
+        '401':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem401Response"
+        '403':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem403Response"
+        '415':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem415Response"
+components:
+  securitySchemes:
+    supabaseAuth:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: "https://lhejchjgwiaqykglszvd.supabase.co/auth/v1/token?grant_type=client_credentials"
+          scopes: {}
+  schemas:
+    FileResponse:
+      type: object
+      properties:
+        fileId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      required:
+        - fileId
+        - message
+    ScanResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "clean"
+        threatsFound:
+          type: integer
+          example: 0
+          minimum: 0
+          maximum: 1000
+        message:
+          type: string
+          example: "No threats detected."
+      required:
+        - status
+        - threatsFound
+        - message
+    OcrResponse:
+      type: object
+      properties:
+        extractedText:
+          type: string
+          example: "Extracted text appears here..."
+        message:
+          type: string
+          example: "OCR extraction successful."
+      required:
+        - extractedText
+        - message
+    RedactionResponse:
+      type: object
+      properties:
+        redactedFileUrl:
+          type: string
+          example: "https://example.com/files/redacted-file.pdf"
+        message:
+          type: string
+          example: "Redaction completed successfully."
+      required:
+        - redactedFileUrl
+        - message
+    ConversionResponse:
+      type: object
+      properties:
+        convertedFileUrl:
+          type: string
+          example: "https://example.com/files/converted-file.pdf"
+        message:
+          type: string
+          example: "Conversion successful."
+      required:
+        - convertedFileUrl
+        - message
+    BarcodeResponse:
+      type: object
+      properties:
+        barcodes:
+          type: array
+          description: Array of detected barcode strings.
+          items:
+            type: string
+          minItems: 1
+          maxItems: 10
+          example: ["012345678912"]
+        message:
+          type: string
+          example: "Barcode recognition completed successfully."
+      required:
+        - barcodes
+        - message
+    ReorientationResponse:
+      type: object
+      properties:
+        reorientedFileUrl:
+          type: string
+          example: "https://example.com/files/reoriented-file.jpg"
+        message:
+          type: string
+          example: "Image reorientation completed successfully."
+      required:
+        - reorientedFileUrl
+        - message
+    SplitResponse:
+      type: object
+      properties:
+        splitFiles:
+          type: array
+          description: Array of URLs for the split files.
+          items:
+            type: string
+          minItems: 1
+          maxItems: 10
+          example: ["https://example.com/files/split-1.pdf", "https://example.com/files/split-2.pdf"]
+        message:
+          type: string
+          example: "File splitting completed successfully."
+      required:
+        - splitFiles
+        - message
+    MergeResponse:
+      type: object
+      properties:
+        mergedFileUrl:
+          type: string
+          example: "https://example.com/files/merged-file.pdf"
+        message:
+          type: string
+          example: "Files merged successfully."
+      required:
+        - mergedFileUrl
+        - message
