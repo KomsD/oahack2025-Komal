@@ -15,6 +15,7 @@ import {
   ChevronDownIcon,
   GlobeIcon,
   LockIcon,
+  InfoIcon,
 } from './icons';
 import { useChatVisibility } from '@/hooks/use-chat-visibility';
 
@@ -29,14 +30,20 @@ const visibilities: Array<{
   {
     id: 'private',
     label: 'Private',
-    description: 'Only you can access this chat',
+    description: 'Only you can access this chat and the files processed in your space.',
     icon: <LockIcon />,
   },
   {
     id: 'public',
-    label: 'Public',
-    description: 'Anyone with the link can access this chat',
+    label: 'Collaborate',
+    description: 'Anyone in your organisation, but not outside it, with the link can access this chat and the files processed in your space.',
     icon: <GlobeIcon />,
+  },
+  {
+    id: 'public',
+    label: 'Public',
+    description: 'Anyone inside or outside your organisation with the link can access this chat and the files processed in your space.',
+    icon: <InfoIcon />,
   },
 ];
 
