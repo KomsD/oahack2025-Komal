@@ -13,23 +13,23 @@ interface SuggestedActionsProps {
 function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
   const suggestedActions = [
     {
-      title: 'What are the advantages',
-      label: 'of using Next.js?',
+      title: 'How do I convert a document',
+      label: 'from PNG to PDF?',
       action: 'What are the advantages of using Next.js?',
     },
     {
-      title: 'Write code to',
-      label: `demonstrate djikstra's algorithm`,
+      title: 'How do I extract the data',
+      label: `from an Invoice?`,
       action: `Write code to demonstrate djikstra's algorithm`,
     },
     {
-      title: 'Help me write an essay',
-      label: `about silicon valley`,
+      title: 'I want to redact my Legal document',
+      label: `how do I specify email addresses?`,
       action: `Help me write an essay about silicon valley`,
     },
     {
-      title: 'What is the weather',
-      label: 'in San Francisco?',
+      title: 'Can I merge a PDF with a Word document',
+      label: 'then convert it to a PPT?',
       action: 'What is the weather in San Francisco?',
     },
   ];
