@@ -18,14 +18,19 @@ info:
     With features including:
 
     <ul>
+    <li><b>Chat!</b> Glyph has a built in chatbot helper to guide you. No more TLDR, no more RTFM, just ask.<br><br></li>
     <li><b>File Upload</b><br>All files uploaded are AV scanned, the response assuming clean will be a fileId upon which action is taken.<br><br></li>
-    <li><b>OCR Data Extraction</b><br>The textual of your file is extracted and returned with 3 options, either as json, xml or markdown.<br><br></li>
+    <li><b>Data Extraction</b><br>The textual content of your file is extracted and returned with 3 options, either as json, xml or markdown. If it requires OCR, that is done <b>automatically</b> if a text layer is not found.<br><br></li>
     <li><b>Automatic or Consumer driven Redaction</b><br>Automatic mode will use AI to dynamically identify PII and redact all values found.<br>Value mode will accommodate key values as specified by the consumer, such as name, address, email and so on.<br>Manual mode will allow terms specified by the consumer to be redacted.<br><br>All values use a traditional black box overlaying the values.<br><br></li>
     <li><b>File Conversion</b><br>Convert any filetype to any other filetype, such as DOCX to PDF, XLS to PPT and so on.<br><br></li>
     <li><b>Barcode Recognition</b><br>Billions of barcode's are read every single day across the world, QR codes particularly are prevalent now as they hold a lot of information, such as URLs.<br><br></li>
     <li><b>Re-orientation</b><br>Assume a document is landscape and you want to make it portrait, or vice versa.<br><br></li>
     <li><b>Splitting</b><br>Assume your document is 30 pages, and you want to split it in to 3 documents of 10 pages each.<br><br></li> 
     <li><b>Merging</b><br>Assume you have multiple documents you want to merge into one.<br><br></li>
+    <li><b>Distribute</b><br>Email, Text or WhatsApp your files or documents as attachments.<br><br></li>
+    <li><b>Integrate</b><br>Send your Document / File to a pre-configured Prismatic endpoint allowing the Document / File and / or it's data be created in the respective application, such as an Invoice to Financials or CV to HR and so on.<br><br></li>
+    <li><b>Classify</b><br>A super simple capability allowing a document to be classified returning a single / very few words to allow a native workflow be used to route the Document / File.<br><br></li>
+    <li><b>Audit</b><br>Return a complete audit of the history of a Document / File by asking Glyph to tell you.<br><br></li>
     </ul>
 
     <hr>
@@ -39,6 +44,251 @@ tags:
 security:
   - supabaseAuth: []
 paths:
+
+  /chat:
+    post:
+      tags:
+        - FPA
+      operationId: processChat
+      summary: Process a text-based chat interaction
+      description: Initiates a chat interaction by sending text-based messages to Glyph.
+      requestBody:
+        description: The chat messages and model configuration.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                messages:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                        enum:
+                          - system
+                          - user
+                          - assistant
+                        description: The role of the message sender.
+                        minLength: 1
+                        maxLength: 20 # Example limit
+                        example: "user"
+                    required:
+                      - role
+                      - content
+                  minItems: 1
+                  maxItems: 10
+                model:
+                  type: string
+                  description: The AI model to use for processing.
+                  default: "grok-3-latest"
+                  minLength: 1
+                  maxLength: 100 # Example limit
+                  example: "llama-2-70b-chat"
+                stream:
+                  type: boolean
+                  description: Whether to stream the response.
+                  default: false
+                  example: false
+                temperature:
+                  type: number
+                  description: Controls the randomness of the output (0 for deterministic).
+                  default: 0
+                  minimum: 0
+                  maximum: 1
+                  multipleOf: 0.01 # Example: Temperature in increments of 0.01
+                  example: 0.8
+              required:
+                - messages
+            example:
+              messages:
+                - role: "system"
+                  content: "You are helpful assistant who is an expert at document redaction. I'm going to provide you a document, please redact it effectively."
+                - role: "user"
+                  content: "redact only email addresses from the document I've provided you."
+              model: "grok-3-latest"
+              stream: false
+              temperature: 0
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - model
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    description: Unique identifier for the chat completion.
+                    example: "fc6896b9-caf0-451c-932e-b6920f0d4b09"
+                  object:
+                    type: string
+                    description: The type of object returned.
+                    example: "chat.completion"
+                    minLength: 1
+                    maxLength: 50 # Example limit
+                  created:
+                    type: integer
+                    description: The timestamp of when the chat completion was created (in seconds since epoch).
+                    example: 1746622886
+                  model:
+                    type: string
+                    description: The model used for the chat completion.
+                    example: "grok-3-beta"
+                    minLength: 1
+                    maxLength: 100 # Example limit
+                  choices:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        index:
+                          type: integer
+                          description: The index of the choice in the list.
+                          example: 0
+                        message:
+                          type: object
+                          properties:
+                            role:
+                              type: string
+                              enum:
+                                - assistant
+                              description: The role of the message.
+                              example: "assistant"
+                              minLength: 1
+                              maxLength: 20 # Example limit
+                            content:
+                              type: string
+                              nullable: true
+                              description: The content of the message.
+                              example: "Understood. I will redact only the email addresses from the document you provide. Please share the document or text you'd like me to work on, and I will replace any email addresses with a placeholder like [REDACTED]. If you have a specific format or placeholder you'd prefer for the redaction, let me know. I'm ready to assist!"
+                              minLength: 1
+                              maxLength: 4000 # Example limit
+                            refusal:
+                              type: string
+                              nullable: true
+                              description: The reason for refusal, if the model refused to respond.
+                              example: null
+                              maxLength: 200 # Example limit
+                          required:
+                            - role
+                            - content
+                        finish_reason:
+                          type: string
+                          enum:
+                            - stop
+                            - length
+                            - content_filter
+                            - function_call
+                          description: The reason the model stopped generating tokens.
+                          example: "stop"
+                          minLength: 1
+                          maxLength: 20 # Example limit
+                      required:
+                        - index
+                        - message
+                        - finish_reason
+                    minItems: 1
+                    maxItems: 1
+                  usage:
+                    type: object
+                    properties:
+                      prompt_tokens:
+                        type: integer
+                        description: The number of tokens used in the prompt.
+                        example: 49
+                      completion_tokens:
+                        type: integer
+                        description: The number of tokens used in the completion.
+                        example: 71
+                      total_tokens:
+                        type: integer
+                        description: The total number of tokens used.
+                        example: 120
+                      prompt_tokens_details:
+                        type: object
+                        nullable: true
+                        properties:
+                          text_tokens:
+                            type: integer
+                            example: 49
+                          audio_tokens:
+                            type: integer
+                            example: 0
+                          image_tokens:
+                            type: integer
+                            example: 0
+                          cached_tokens:
+                            type: integer
+                            example: 0
+                      completion_tokens_details:
+                        type: object
+                        nullable: true
+                        properties:
+                          reasoning_tokens:
+                            type: integer
+                            example: 0
+                          audio_tokens:
+                            type: integer
+                            example: 0
+                          accepted_prediction_tokens:
+                            type: integer
+                            example: 0
+                          rejected_prediction_tokens:
+                            type: integer
+                            example: 0
+                    required:
+                      - prompt_tokens
+                      - completion_tokens
+                      - total_tokens
+                  system_fingerprint:
+                    type: string
+                    nullable: true
+                    description: A unique identifier representing the model version.
+                    example: "fp_e274c7b208"
+                    maxLength: 100 # Example limit
+                example:
+                  id: "fc6896b9-caf0-451c-932e-b6920f0d4b09"
+                  object: "chat.completion"
+                  created: 1746622886
+                  model: "grok-3-beta"
+                  choices:
+                    - index: 0
+                      message:
+                        role: "assistant"
+                        content: "Understood. I will redact only the email addresses from the document you provide. Please share the document or text you'd like me to work on, and I will replace any email addresses with a placeholder like [REDACTED]. If you have a specific format or placeholder you'd prefer for the redaction, let me know. I'm ready to assist!"
+                        refusal: null
+                      finish_reason: "stop"
+                  usage:
+                    prompt_tokens: 49
+                    completion_tokens: 71
+                    total_tokens: 120
+                    prompt_tokens_details:
+                      text_tokens: 49
+                      audio_tokens: 0
+                      image_tokens: 0
+                      cached_tokens: 0
+                    completion_tokens_details:
+                      reasoning_tokens: 0
+                      audio_tokens: 0
+                      accepted_prediction_tokens: 0
+                      rejected_prediction_tokens: 0
+                  system_fingerprint: "fp_e274c7b208"
+        '400':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem400Response"
+        '401':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem401Response"
+        '403':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem403Response"
+        '415':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem415Response"
+        '500':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem500Response" # Assuming a standard 500 response
   /upload:
     post:
       tags:
@@ -69,44 +319,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FileResponse'
-        '400':
-          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem400Response"
-        '401':
-          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem401Response"
-        '403':
-          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem403Response"
-        '415':
-          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem415Response"
-  /scan:
-    post:
-      tags:
-        - FPA
-      operationId: scanFile
-      summary: Perform antivirus scan on a file
-      description: >
-        Initiate an AV scan using a specified scanning module (e.g., ClamAV) to detect threats.
-      requestBody:
-        description: The request requires the GUID of a previously uploaded file.
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                fileId:
-                  type: string
-                  format: uuid
-                  description: Identifier (GUID) of the previously uploaded file.
-                  example: "123e4567-e89b-12d3-a456-426614174000"
-              required:
-                - fileId
-      responses:
-        '200':
-          description: Scan completed successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ScanResponse'
         '400':
           $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem400Response"
         '401':
@@ -405,6 +617,214 @@ paths:
           $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem403Response"
         '415':
           $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem415Response"
+
+  /audit:
+    get:
+      tags:
+        - FPA
+      operationId: getDocumentAuditLog
+      summary: Retrieve the audit log for document activities
+      description: Returns a list of audit log entries related to document processing within a JSON object.
+      parameters:
+        - in: query
+          name: fileId
+          schema:
+            type: string
+            format: uuid
+          description: Filter audit logs by a specific File ID (GUID).
+          example: "fc6896b9-caf0-451c-932e-b6920f0d4b09"
+        - in: query
+          name: userId
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+          description: Filter audit logs by a specific User ID.
+          example: "user123"
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+          description: Filter audit logs by events occurring on or after this date (YYYY-MM-DD).
+          example: "2025-05-01"
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+          description: Filter audit logs by events occurring on or before this date (YYYY-MM-DD).
+          example: "2025-05-07"
+        - in: query
+          name: activityType
+          schema:
+            type: string
+            enum:
+              - upload
+              - avScan
+              - chatInteraction
+              - redaction
+              - download
+          description: Filter audit logs by the type of document activity.
+          example: "redaction"
+      responses:
+        '200':
+          description: Successful retrieval of document audit logs.
+          content:
+            application/json:
+              schema:
+                type: object # Changed from array to object
+                properties:
+                  auditLogs: # Added a wrapping property
+                    type: array
+                    minItems: 1
+                    items:
+                      type: object
+                      properties:
+                        timestamp:
+                          type: string
+                          format: date-time
+                          description: Timestamp of the audit event.
+                          example: "2025-05-07T14:35:00Z"
+                        fileId:
+                          type: string
+                          format: uuid
+                          description: Identifier of the file involved (GUID).
+                          example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+                        userId:
+                          type: string
+                          description: Identifier of the user or system involved.
+                          minLength: 1
+                          maxLength: 100
+                          example: "user123"
+                        activityType:
+                          type: string
+                          enum:
+                            - upload
+                            - avScan
+                            - chatInteraction
+                            - redaction
+                            - download
+                          description: The type of document activity.
+                          example: "redaction"
+                        activityDetails:
+                          type: object
+                          nullable: true
+                          description: Specific details about the document activity.
+                          example:
+                            redactionType: "emailAddresses"
+                            modelUsed: "grok-3-latest"
+                        processingTimeMs:
+                          type: integer
+                          description: The time taken to perform the activity in milliseconds (if applicable).
+                          example: 1250
+                        status:
+                          type: string
+                          enum:
+                            - success
+                            - failure
+                          description: The status of the document activity.
+                          minLength: 1
+                          maxLength: 20
+                          example: "success"
+                        errorMessage:
+                          type: string
+                          nullable: true
+                          description: Error message if the activity failed.
+                          minLength: 1
+                          maxLength: 500
+                          example: "Redaction process timed out."
+                      required:
+                        - timestamp
+                        - fileId
+                        - userId
+                        - activityType
+                        - status
+                required:
+                  - auditLogs
+                example:
+                  auditLogs:
+                    - timestamp: "2025-05-07T14:30:00Z"
+                      fileId: "00112233-4455-6677-8899-aabbccddeeff"
+                      userId: "system"
+                      activityType: "upload"
+                      activityDetails:
+                        fileName: "report.pdf"
+                        fileSizeBytes: 102400
+                      status: "success"
+                    - timestamp: "2025-05-07T14:32:00Z"
+                      fileId: "99887766-5544-3322-1100-fedcba987654"
+                      userId: "system"
+                      activityType: "avScan"
+                      activityDetails:
+                        scanEngine: "ClamAV"
+                        status: "clean"
+                      status: "success"
+        '400':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem400Response"
+        '401':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem401Response"
+        '403':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem403Response"
+        '500':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem500Response"
+
+  /classify:
+    post:
+      tags:
+        - FPA
+      operationId: classifyDocument
+      summary: Classify a document
+      description: Classifies a document based on its fileId.
+      requestBody:
+        description: The fileId of the document to classify.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fileId:
+                  type: string
+                  format: uuid
+                  description: The ID of the file to classify.
+                  example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+              required:
+                - fileId
+      responses:
+        '200':
+          description: Successful document classification.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  classification:
+                    type: string
+                    enum:
+                      - Invoice
+                      - Tender
+                      - CV
+                      - Other
+                      - Unknown
+                    description: The classification of the document.
+                    example: "Invoice"
+                required:
+                  - classification
+              example:
+                classification: "Invoice"
+        '400':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem400Response"
+        '401':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem401Response"
+        '403':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem403Response"
+        '415':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem415Response"
+        '500':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem500Response"
+
+
 components:
   securitySchemes:
     supabaseAuth:
@@ -423,24 +843,6 @@ components:
           example: "123e4567-e89b-12d3-a456-426614174000"
       required:
         - fileId
-        - message
-    ScanResponse:
-      type: object
-      properties:
-        status:
-          type: string
-          example: "clean"
-        threatsFound:
-          type: integer
-          example: 0
-          minimum: 0
-          maximum: 1000
-        message:
-          type: string
-          example: "No threats detected."
-      required:
-        - status
-        - threatsFound
         - message
     OcrResponse:
       type: object
