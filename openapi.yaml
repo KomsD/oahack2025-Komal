@@ -13,24 +13,16 @@ info:
   x-audience: company-internal
   x-api-id: 3bd860e6-ee3a-4c58-9193-bc93b8b4f9c3
   description: >
-    The OneAdvanced AI <b>F</b>ile <b>P</b>rocessing <b>A</b>gent (FPA), Glyph, is a <i>complete</i> multi-modal AI powered solution for processing any file.<br><br>
+    The OneAdvanced AI <b>F</b>ile <b>P</b>rocessing <b>A</b>gent (FPA), Glyph, is a <i>complete</i> multi-modal AI powered solution for processing any file or document.<br><br>
     
-    With features including:
+    Features include, auditing, barcode generation and recognition, chat, document classification, data extraction & document manipulation.<br><br>
+
+    For more details on each endpoint functionality, see the detailed documentation therein.
 
     <ul>
-    <li><b>Chat!</b> Glyph has a built in chatbot helper to guide you. No more TLDR, no more RTFM, just ask.<br><br></li>
-    <li><b>File Upload</b><br>All files uploaded are AV scanned, the response assuming clean will be a fileId upon which action is taken.<br><br></li>
-    <li><b>Data Extraction</b><br>The textual content of your file is extracted and returned with 3 options, either as json, xml or markdown. If it requires OCR, that is done <b>automatically</b> if a text layer is not found.<br><br></li>
-    <li><b>Automatic or Consumer driven Redaction</b><br>Automatic mode will use AI to dynamically identify PII and redact all values found.<br>Value mode will accommodate key values as specified by the consumer, such as name, address, email and so on.<br>Manual mode will allow terms specified by the consumer to be redacted.<br><br>All values use a traditional black box overlaying the values.<br><br></li>
-    <li><b>File Conversion</b><br>Convert any filetype to any other filetype, such as DOCX to PDF, XLS to PPT and so on.<br><br></li>
-    <li><b>Barcode Recognition</b><br>Billions of barcode's are read every single day across the world, QR codes particularly are prevalent now as they hold a lot of information, such as URLs.<br><br></li>
-    <li><b>Re-orientation</b><br>Assume a document is landscape and you want to make it portrait, or vice versa.<br><br></li>
-    <li><b>Splitting</b><br>Assume your document is 30 pages, and you want to split it in to 3 documents of 10 pages each.<br><br></li> 
-    <li><b>Merging</b><br>Assume you have multiple documents you want to merge into one.<br><br></li>
+    
     <li><b>Distribute</b><br>Email, Text or WhatsApp your files or documents as attachments.<br><br></li>
     <li><b>Integrate</b><br>Send your Document / File to a pre-configured Prismatic endpoint allowing the Document / File and / or it's data be created in the respective application, such as an Invoice to Financials or CV to HR and so on.<br><br></li>
-    <li><b>Classify</b><br>A super simple capability allowing a document to be classified returning a single / very few words to allow a native workflow be used to route the Document / File.<br><br></li>
-    <li><b>Audit</b><br>Return a complete audit of the history of a Document / File by asking Glyph to tell you.<br><br></li>
     </ul>
 
     <hr>
@@ -39,8 +31,24 @@ servers:
   - url: https://supabase.ftw/api
     description: Use this URL to start using it. Simple really.
 tags:
-  - name: FPA
-    description: For simplicity, this API has a single operational tag.
+
+  - name: Audit
+    description: Every interaction with Glyph is audited in detail. Provide the fileId and a complete history is provided.
+  - name: Barcode
+    description: Either generate a QR Code, or read a barcode from an existing File or Document.
+  - name: Chat
+    description: Glyph has a built in chatbot helper to guide you. No more TLDR, no more RTFM, just ask.
+  - name: Classify
+    description: A very simple endpoint returning classification of a File / Document. 
+  - name: Distribute
+    description: Send your File / Document and / or it's data as an Email attachment, SMS or WhatsApp.
+  - name: Extract
+    description: Extract text from a File / Document and choose the response format you'd like as a consumer.
+  - name: Manipulate
+    description: File and Document manipulation can be time consuming and a very manual process.<br>Glyph makes it easy and fast.  
+  - name: Upload
+    description: To allow your files and documents to be securely uploaded and virus scanned, they must first be uploaded to Glyph and where successful a unique fileId returned. This is then used to perform a function.
+
 security:
   - supabaseAuth: []
 paths:
@@ -48,7 +56,7 @@ paths:
   /chat:
     post:
       tags:
-        - FPA
+        - Chat
       operationId: processChat
       summary: Process a text-based chat interaction
       description: Initiates a chat interaction by sending text-based messages to Glyph.
@@ -292,7 +300,7 @@ paths:
   /upload:
     post:
       tags:
-        - FPA
+        - Upload
       operationId: uploadFile
       summary: Upload a file for processing
       description: >
@@ -314,7 +322,7 @@ paths:
                 - file
       responses:
         '200':
-          description: File uploaded successfully
+          description: OK
           content:
             application/json:
               schema:
@@ -327,16 +335,16 @@ paths:
           $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem403Response"
         '415':
           $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem415Response"
-  /ocr:
+  /extract:
     post:
       tags:
-        - FPA
-      operationId: extractOcrText
-      summary: Extract text using OCR
+        - Extract
+      operationId: extractText
+      summary: Extract text from a given file or Document
       description: >
-        Extract textual data from the file using Mistral OCR.
+        The textual content of your file is extracted and returned with 3 options, either as json, xml or markdown. If it requires OCR, that is done <b>automatically</b> if a text layer is not found.
       requestBody:
-        description: Provide the GUID of the file to perform OCR on.
+        description: Provide the GUID of the file to perform OCR on and the desired return data format.
         required: true
         content:
           multipart/form-data:
@@ -348,15 +356,42 @@ paths:
                   format: uuid
                   description: Identifier (GUID) of the uploaded file.
                   example: "123e4567-e89b-12d3-a456-426614174000"
+                returnDataAs:
+                  type: string
+                  enum:
+                    - XML
+                    - MARKDOWN
+                    - JSON
+                  description: Specify the format in which to return the extracted data.
+                  example: JSON
               required:
                 - fileId
+                - returnDataAs
       responses:
         '200':
-          description: OCR extraction completed
+          description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/OcrResponse'
+              example:
+                extractedText: "This is the extracted text in JSON."
+            application/xml:
+              schema:
+                type: string
+                description: Extracted text in XML format.
+              example: |
+                <OcrResponse>
+                  <extractedText>This is the extracted text in XML.</extractedText>
+                </OcrResponse>
+            text/csv:
+              schema:
+                type: string
+                description: Extracted text in Markdown format.
+              example: |
+                ```
+                This is the extracted text in Markdown.
+                ```
         '400':
           $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem400Response"
         '401':
@@ -368,13 +403,13 @@ paths:
   /redact:
     post:
       tags:
-        - FPA
+        - Manipulate
       operationId: redactFile
       summary: Redact sensitive data in a file
       description: >
-        Automatically or manually redact sensitive data from the file.
+        Automatic or Consumer driven Redaction</b><br>Automatic mode will use AI to dynamically identify PII and redact all values found.<br>Value mode will accommodate key values as specified by the consumer, such as name, address, email and so on.<br>Manual mode will allow terms specified by the consumer to be redacted.<br><br>All values use a traditional black box overlaying the values.
       requestBody:
-        description: Provide the file GUID and specify the redaction mode ("auto" for automatic or "manual" for consumer directed).
+        description: Provide the file GUID and specify the redaction mode and optional values.
         required: true
         content:
           multipart/form-data:
@@ -388,14 +423,29 @@ paths:
                   example: "123e4567-e89b-12d3-a456-426614174000"
                 mode:
                   type: string
-                  enum: [auto, manual]
-                  description: Redaction mode "auto" (automatic) or "manual" (consumer directed).
+                  enum: [auto, value, manual]
+                  description: >-
+                    Redaction mode. "auto" uses AI to automatically detect and
+                    redact PII, "value" allows you to specify values to redact, or
+                    "manual" allows you to give AI instructions on what types of
+                    values to redact, such as email addresses, surnames, and so on
+                    (consumer directed).
+                  example: auto
+                values:
+                  type: string
+                  minLength: 0
+                  maxLength: 9999
+                  description: >-
+                    Values or instructions for redaction. Only used in conjunction
+                    with "value" or "manual" modes. Provide specific values to redact
+                    (for "value" mode) or instructions (for "manual" mode).
+                  example: email addresses, phone numbers
               required:
                 - fileId
                 - mode
       responses:
         '200':
-          description: Redaction completed successfully
+          description: OK
           content:
             application/json:
               schema:
@@ -411,11 +461,11 @@ paths:
   /convert:
     post:
       tags:
-        - FPA
+        - Manipulate
       operationId: convertFile
       summary: Convert file to a different format
       description: >
-        Convert the file from its current format to another specified format (e.g., pdf, txt, jpg).
+        Convert any filetype to any other filetype, such as DOCX to PDF, XLS to PPT and so on.
       requestBody:
         description: Provide the file GUID and the desired target format.
         required: true
@@ -439,7 +489,7 @@ paths:
                 - targetFormat
       responses:
         '200':
-          description: File conversion completed successfully
+          description: OK
           content:
             application/json:
               schema:
@@ -453,13 +503,55 @@ paths:
         '415':
           $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem415Response"
   /barcode:
+    get:
+      tags:
+        - Barcode
+      operationId: generateBarcode
+      summary: Generate a barcode
+      description: >
+        Generate a barcode returned as a PNG which can then be used to attach to a File / Document.
+      parameters:
+        - in: query
+          name: data
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 9999
+          description: The data to be encoded in the QR code.
+          required: true
+          example: "https://www.example.com"
+        - in: query
+          name: size
+          schema:
+            type: string
+            default: "200x200"
+            pattern: '^\d+x\d+$'
+            maxLength: 9999
+            minLength: 4
+          description: The size of the QR code image (e.g., 200x200).
+          required: false
+          example: "300x300"
+      responses:
+        '200':
+          description: A QR code image in PNG format.
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem400Response"
+        '401':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem401Response"
+        '403':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem403Response"
     post:
       tags:
-        - FPA
+        - Barcode
       operationId: recognizeBarcode
       summary: Recognize barcode in a file
       description: >
-        Detect and extract barcode information from the file.
+        Billions of barcode's are read every single day across the world, QR codes particularly are prevalent now as they hold a lot of information, such as URLs.<br><br>CODE 128 and QR Code barcode's are supported and automatically detected.<br><br>If more than one barcode is present, their values returned as an array up to 10 per document.
       requestBody:
         description: Provide the file GUID for barcode detection.
         required: true
@@ -477,7 +569,7 @@ paths:
                 - fileId
       responses:
         '200':
-          description: Barcode recognition completed successfully
+          description: OK
           content:
             application/json:
               schema:
@@ -493,11 +585,11 @@ paths:
   /reorient:
     post:
       tags:
-        - FPA
+        - Manipulate
       operationId: reorientFile
       summary: Reorient an image file
       description: >
-        Automatically adjust the orientation of an image file.
+        Assume a document is landscape and you want to make it portrait, or vice versa.
       requestBody:
         description: Provide the file GUID for reorientation.
         required: true
@@ -515,7 +607,7 @@ paths:
                 - fileId
       responses:
         '200':
-          description: Image reorientation completed successfully
+          description: OK
           content:
             application/json:
               schema:
@@ -531,11 +623,11 @@ paths:
   /split:
     post:
       tags:
-        - FPA
+        - Manipulate
       operationId: splitFile
       summary: Split a multi-page document
       description: >
-        Split a multi-page document (e.g., PDF) into separate files.
+       Assume your document is 30 pages, and you want to split it in to 3 documents of 10 pages each.
       requestBody:
         description: Provide the file GUID and an optional array of page numbers to extract.
         required: true
@@ -562,7 +654,7 @@ paths:
                 - fileId
       responses:
         '200':
-          description: File splitting completed successfully
+          description: OK
           content:
             application/json:
               schema:
@@ -578,11 +670,11 @@ paths:
   /merge:
     post:
       tags:
-        - FPA
+        - Manipulate
       operationId: mergeFiles
       summary: Merge multiple files
       description: >
-        Merge multiple files into a single document.
+        Assume you have multiple documents you want to merge into one.
       requestBody:
         description: Provide a non-empty array of file GUIDs to merge.
         required: true
@@ -604,7 +696,7 @@ paths:
                 - fileIds
       responses:
         '200':
-          description: Files merged successfully
+          description: OK
           content:
             application/json:
               schema:
@@ -621,10 +713,10 @@ paths:
   /audit:
     get:
       tags:
-        - FPA
+        - Audit
       operationId: getDocumentAuditLog
       summary: Retrieve the audit log for document activities
-      description: Returns a list of audit log entries related to document processing within a JSON object.
+      description: Return a complete audit of the history of a Document / File by asking Glyph to tell you.
       parameters:
         - in: query
           name: fileId
@@ -655,21 +747,9 @@ paths:
             format: date
           description: Filter audit logs by events occurring on or before this date (YYYY-MM-DD).
           example: "2025-05-07"
-        - in: query
-          name: activityType
-          schema:
-            type: string
-            enum:
-              - upload
-              - avScan
-              - chatInteraction
-              - redaction
-              - download
-          description: Filter audit logs by the type of document activity.
-          example: "redaction"
       responses:
         '200':
-          description: Successful retrieval of document audit logs.
+          description: OK
           content:
             application/json:
               schema:
@@ -757,7 +837,7 @@ paths:
                       userId: "system"
                       activityType: "avScan"
                       activityDetails:
-                        scanEngine: "ClamAV"
+                        scanEngine: "AWS Sentinel"
                         status: "clean"
                       status: "success"
         '400':
@@ -772,10 +852,10 @@ paths:
   /classify:
     post:
       tags:
-        - FPA
+        - Classify
       operationId: classifyDocument
       summary: Classify a document
-      description: Classifies a document based on its fileId.
+      description: Allowing a document to be classified returning a single / very few words to allow a native workflow be used to route the Document / File.
       requestBody:
         description: The fileId of the document to classify.
         required: true
@@ -793,7 +873,7 @@ paths:
                 - fileId
       responses:
         '200':
-          description: Successful document classification.
+          description: OK
           content:
             application/json:
               schema:
@@ -801,12 +881,6 @@ paths:
                 properties:
                   classification:
                     type: string
-                    enum:
-                      - Invoice
-                      - Tender
-                      - CV
-                      - Other
-                      - Unknown
                     description: The classification of the document.
                     example: "Invoice"
                 required:
@@ -824,6 +898,91 @@ paths:
         '500':
           $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem500Response"
 
+  /distribute:
+    post:
+      tags:
+        - Distribute
+      operationId: sendIt
+      summary: Distribute a file via email, text, or WhatsApp
+      description: This endpoint allows you to send a file as an attachment using different distribution methods.
+      requestBody:
+        description: Provide the file ID and distribution details.
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                fileId:
+                  type: string
+                  description: Identifier (GUID) of the file to be distributed.
+                  format: uuid
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                medium:
+                  type: string
+                  enum:
+                    - email
+                    - text
+                    - whatsapp
+                  description: The distribution method.
+                  example: email
+                recipient:
+                  type: string
+                  description: The recipient's address (email, phone number).
+                  maxLength: 255
+                  minLength: 1
+                  example: john.doe@example.com
+                subject:
+                  type: string
+                  description: The subject of the message (for email).
+                  maxLength: 200
+                  minLength: 1
+                  example: "File Distribution"
+                message:
+                  type: string
+                  description: The message body.
+                  maxLength: 1000
+                  minLength: 1
+                  example: "Please find the attached file."
+              required:
+                - fileId
+                - medium
+                - recipient
+      responses:
+        '200':
+          description: File distribution successful.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: A success message.
+                    maxLength: 200
+                    minLength: 1
+                  medium:
+                    type: string
+                    description: The medium used for distribution
+                    maxLength: 20
+                    minLength: 1
+                  recipient:
+                    type: string
+                    description: The recipient
+                    maxLength: 255
+                    minLength: 1
+                example:
+                  message: "File sent successfully via email."
+                  medium: email
+                  recipient: john.doe@example.com
+        '400':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem400Response"
+        '401':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem401Response"
+        '403':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem403Response"
+        '415':
+          $ref: "https://api.swaggerhub.com/domains/AdvancedComputerSoft/advanced-common-oas3/1.9.0#/components/responses/Problem415Response"
 
 components:
   securitySchemes:
@@ -850,36 +1009,24 @@ components:
         extractedText:
           type: string
           example: "Extracted text appears here..."
-        message:
-          type: string
-          example: "OCR extraction successful."
       required:
         - extractedText
-        - message
     RedactionResponse:
       type: object
       properties:
         redactedFileUrl:
           type: string
           example: "https://example.com/files/redacted-file.pdf"
-        message:
-          type: string
-          example: "Redaction completed successfully."
       required:
         - redactedFileUrl
-        - message
     ConversionResponse:
       type: object
       properties:
         convertedFileUrl:
           type: string
           example: "https://example.com/files/converted-file.pdf"
-        message:
-          type: string
-          example: "Conversion successful."
       required:
         - convertedFileUrl
-        - message
     BarcodeResponse:
       type: object
       properties:
@@ -891,21 +1038,14 @@ components:
           minItems: 1
           maxItems: 10
           example: ["012345678912"]
-        message:
-          type: string
-          example: "Barcode recognition completed successfully."
       required:
         - barcodes
-        - message
     ReorientationResponse:
       type: object
       properties:
         reorientedFileUrl:
           type: string
           example: "https://example.com/files/reoriented-file.jpg"
-        message:
-          type: string
-          example: "Image reorientation completed successfully."
       required:
         - reorientedFileUrl
         - message
@@ -920,9 +1060,6 @@ components:
           minItems: 1
           maxItems: 10
           example: ["https://example.com/files/split-1.pdf", "https://example.com/files/split-2.pdf"]
-        message:
-          type: string
-          example: "File splitting completed successfully."
       required:
         - splitFiles
         - message
@@ -932,9 +1069,6 @@ components:
         mergedFileUrl:
           type: string
           example: "https://example.com/files/merged-file.pdf"
-        message:
-          type: string
-          example: "Files merged successfully."
       required:
         - mergedFileUrl
         - message
