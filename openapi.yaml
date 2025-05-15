@@ -16,20 +16,14 @@ info:
     The OneAdvanced AI <b>F</b>ile <b>P</b>rocessing <b>A</b>gent (FPA), Glyph, is a <i>complete</i> multi-modal AI powered solution for processing any file or document.<br><br>
     
     Features include, auditing, barcode generation and recognition, chat, document classification, data extraction & document manipulation.<br><br>
-
-    For more details on each endpoint functionality, see the detailed documentation therein.
-
-    <ul>
     
-    <li><b>Distribute</b><br>Email, Text or WhatsApp your files or documents as attachments.<br><br></li>
-    <li><b>Integrate</b><br>Send your Document / File to a pre-configured Prismatic endpoint allowing the Document / File and / or it's data be created in the respective application, such as an Invoice to Financials or CV to HR and so on.<br><br></li>
-    </ul>
+    For more details on each endpoint functionality, see the detailed documentation therein.
 
     <hr>
 
 servers:
-  - url: https://supabase.ftw/api
-    description: Use this URL to start using it. Simple really.
+  - url: https://lhejchjgwiaqykglszvd.supabase.co/auth/v1/oahack2025
+    description: Use this URL to start using it.
 tags:
 
   - name: Audit
@@ -52,7 +46,6 @@ tags:
 security:
   - supabaseAuth: []
 paths:
-
   /chat:
     post:
       tags:
@@ -533,7 +526,7 @@ paths:
           example: "300x300"
       responses:
         '200':
-          description: A QR code image in PNG format.
+          description: OK
           content:
             image/png:
               schema:
